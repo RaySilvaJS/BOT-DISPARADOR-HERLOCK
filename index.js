@@ -8,6 +8,7 @@ const {
 const qrcode = require("qrcode-terminal");
 const fs = require("fs");
 const path = require("path");
+const { iniciarMonitorVencimentos } = require("./verificador_vencimentos");
 
 // ================= UTIL =================
 const loadJSON = (path, def = {}) =>
@@ -67,6 +68,7 @@ const SETE_DIAS = 7 * 24 * 60 * 60 * 1000;
 const LIMITE_DIARIO = 40;
 
 let disparadorRodando = false;
+let monitorVencimentosRodando = false;
 
 // ================= DETECÇÃO DE PEDIDO DE PIX =================
 function detectarPedidoPix(texto) {
@@ -178,6 +180,10 @@ const { version } = await fetchLatestBaileysVersion();
       if (!disparadorRodando) {
         disparadorRodando = true;
         disparador(sock);
+      }
+      if (!monitorVencimentosRodando) {
+        monitorVencimentosRodando = true;
+        iniciarMonitorVencimentos(sock);
       }
     }
 
