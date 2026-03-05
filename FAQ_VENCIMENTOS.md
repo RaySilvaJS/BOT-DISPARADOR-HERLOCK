@@ -48,8 +48,8 @@ Isso simula a verificação sem enviar mensagens de verdade.
 
 Se você reiniciar o bot antes de 08:01, ele não envia novamente (thanks ao arquivo `notificadas_hoje.json`).
 
-### P7: Como funciona se a data não tem ano?
-**R:** Se você colocar apenas `21/03` (sem ano), o sistema avisa todo 21 de março de cada ano.
+### P7: Preciso colocar ano na data?
+**R:** Sim. A mudança recente faz com que o sistema *apenas* processe contatos com ano especificado. Datas sem ano são ignoradas. Além disso, o ano precisa ser o ano atual para que a mensagem seja enviada.
 
 Exemplo:
 ```
@@ -115,14 +115,13 @@ Exemplo:
 O sistema extrai a data do nome automaticamente.
 
 ### P13: Qual formato de data devo usar?
-**R:** O formato é flexível:
+**R:** O formato deve incluir ano, pois datas sem ano são ignoradas.
 
 ✅ **Aceitos:**
 ```
 03/04/2026      (DD/MM/AAAA)
-21/03           (DD/MM)
 21/03/2026      (DD/MM/AAAA)
-🔍 21/03        (com emoji)
+🔍 21/03/2026   (com emoji)
 d - NOME        (com separador)
 d | NOME        (ou pipe)
 ```
@@ -177,7 +176,7 @@ Se não tiver, o contato é pulado automaticamente (com log de aviso).
 
 **Solução:**
 1. Verifique nomes dos contatos na API Google
-2. Use o formato: `DD/MM` ou `DD/MM/AAAA`
+2. Use o formato: `DD/MM/AAAA` (ano obrigatório)
 3. Execute:
    ```bash
    node teste_vencimentos.js

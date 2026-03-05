@@ -10,6 +10,9 @@
 
 const { verificarVencimentos } = require("./verificador_vencimentos");
 const { googleApiContats } = require("./tmp/Google-Api/index");
+// opcional: iniciar bot para enviar mensagens reais
+const { startBot } = require("./index");
+
 
 // Mock do socket para testes
 const mockSocket = {
@@ -21,6 +24,9 @@ const mockSocket = {
 
 // Função de teste
 async function testarVencimentos() {
+  if (process.argv.includes("--real")) {
+    console.log("\n👀 Executando em modo REAL (mensagens serão enviadas pelo bot). Use com cuidado!");
+  }
   try {
     console.log("🧪 INICIANDO TESTE DO SISTEMA DE VENCIMENTOS\n");
     console.log("================================================\n");
@@ -43,7 +49,11 @@ async function testarVencimentos() {
       }
 
       if (!resultado.response || !resultado.response.resultado) {
-        console.log("⚠️ Nenhum contato com data encontrado na API Google\n");
+        console.log("⚠️ Nenhum contato com EMOJI PERMITIDO E DATA encontrado");
+        console.log("\n💡 Contatos válidos devem ter:");
+        console.log("   • Emoji: 🥉 🥈 🥇 💎 🔍");
+        console.log("   • Data: DD/MM/AAAA (ano obrigatório)");
+        console.log("\n   Exemplo: 🔍 21/03/2026 | DN - SP 5193\n");
         return;
       }
 
@@ -53,13 +63,30 @@ async function testarVencimentos() {
       // Lista todos os contatos
       console.log("📋 CONTATOS COM DATAS:");
       console.log("─".repeat(80));
-      
+
       contatos.forEach((c, i) => {
-        const status = (c.dia === hoje.getDate() && c.mes === hoje.getMonth() + 1) 
-          ? "🎯 VENCE HOJE" 
-          : "⏳ Futuro";
+        let status = "";
+        const anoHoje = hoje.getFullYear();
+        const mesHoje = hoje.getMonth() + 1;
+        const diaHoje = hoje.getDate();
+
+        // apenas datas com ano do ano atual geram mensagem
+        const anoContato = parseInt(c.ano, 10);
+        const mesContato = parseInt(c.mes, 10);
+        const diaContato = parseInt(c.dia, 10);
+
+        if (
+          anoContato === anoHoje &&
+          mesContato === mesHoje &&
+          diaContato === diaHoje
+        ) {
+          status = "🎯 VENCE HOJE";
+        } else {
+          status = "⏳ Ignorado (não é data do ano atual)";
+        }
+
         console.log(`${i + 1}. ${c.completo}`);
-        console.log(`   Data: ${c.dia}/${c.mes}${c.ano ? `/${c.ano}` : ''}  ${status}`);
+        console.log(`   Data: ${c.dia}/${c.mes}/${c.ano}  ${status}`);
         console.log("");
       });
 
@@ -67,7 +94,16 @@ async function testarVencimentos() {
 
       // Executa verificação
       console.log("🔔 Executando verificação de vencimentos...\n");
-      await verificarVencimentos(mockSocket);
+      // escolhe socket de teste ou real
+      let sock = mockSocket;
+      if (process.argv.includes("--real")) {
+        console.log("⚠️ Modo real ativado – aguardando conexão do bot...");
+        sock = await startBot();
+        console.log("✅ Bot conectado! Iniciando envios...");
+        // aguarda um pouco para garantir que está pronto
+        await new Promise(r => setTimeout(r, 2000));
+      }
+      await verificarVencimentos(sock);
 
     } catch (error) {
       console.log("❌ Erro:", error.message);

@@ -154,24 +154,24 @@ await delay(10 * 60 * 1000);  // ← Mude para outro valor (ms)
 
 ### Delay entre Envios
 **Arquivo:** `verificador_vencimentos.js`  
-**Linha:** ~194
+**Linha:** cerca de 230 (após envio de mensagem)
 ```javascript
-await delay(3000 + Math.random() * 2000);  // ← 3-5s entre envios
+// Espera para evitar banimento e não parecer bot: 1–2 minutos aleatório
+await delay(60000 + Math.random() * 60000);
 ```
 
 ## 🧪 Testes Realizados
 
 O código foi validado para:
 
-✅ Extração de datas em diversos formatos:
+✅ Extração de datas em diversos formatos (ano obrigatório):
 - Com ano: `03/04/2026`
-- Sem ano: `15/11`
 - Com emoji: `🔍 21/03/2026 | DN`
 - Com separadores: `-` ou `|`
 
 ✅ Detecção correta de vencimento:
 - Comparação de dia/mês atual
-- Ignorância de ano se não especificado
+-- Ignorância de contatos sem ano (eles não são processados)
 - Validação de telefone
 
 ✅ Controle de envio:

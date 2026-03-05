@@ -1,57 +1,52 @@
 const contatos = require("./contatos_api");
 
 function extrairTodosData(lista) {
+  // só interessa contatos que contenham dia/mês/ano completos
   return lista
-    .filter((item) => /\d{2}\/\d{2}/.test(item))
+    .filter((item) => /\d{2}\/\d{2}\/\d{4}/.test(item))
     .map((item) => {
-      //let match = item.match(/(\d{2}\/\d{2})\s*[- ]*\s*(.*?)\|(\+?\d[\d\s-]+)/);
       let match = item.match(
-        /^(\p{Emoji}|\p{Emoji_Presentation}|\p{Extended_Pictographic})?\s*(\d{2})\/(\d{2})(?:\/\d{4})?\s*(.*?)(?:\|(\+?\d[\d\s-]+))?$/u
+        /^(\p{Emoji}|\p{Emoji_Presentation}|\p{Extended_Pictographic})?\s*(\d{2})\/(\d{2})\/(\d{4})\s*(.*?)(?:\|(\+?\d[\d\s-]+))?$/u,
       );
       if (!match) return null;
 
-      if (match) {
-        return {
-          emoji: match[1] ? match[1].trim() : "",
-          dia: match[2],
-          mes: match[3], //parseInt(match[3]),
-          nome: match[4].trim(),
-          telefone: match[5] ? match[5].trim() : null,
-          completo: match[0],
-        };
-      } else {
-        return null;
-      }
+      return {
+        emoji: match[1] ? match[1].trim() : "",
+        dia: match[2],
+        mes: match[3],
+        ano: match[4],
+        nome: match[5].trim(),
+        telefone: match[6] ? match[6].trim() : null,
+        completo: match[0],
+      };
     })
     .filter(Boolean);
 }
 
 function extrairMesDia(lista, mes, dia) {
+  // utiliza apenas contatos com ano (mesdia/ano já extraído acima)
   return lista
     .map((item) => {
-      //let match = item.match(/(\d{2})\/(\d{2})\s*[- ]*\s*(.*?)(?:\|(\+?\d[\d\s-]+))?$/);
       let match = item.match(
-        /^(\p{Emoji}|\p{Emoji_Presentation}|\p{Extended_Pictographic})?\s*(\d{2})\/(\d{2})(?:\/\d{4})?\s*(.*?)(?:\|(\+?\d[\d\s-]+))?$/u
+        /^(\p{Emoji}|\p{Emoji_Presentation}|\p{Extended_Pictographic})?\s*(\d{2})\/(\d{2})\/(\d{4})\s*(.*?)(?:\|(\+?\d[\d\s-]+))?$/u,
       );
       if (!match) return null;
 
-      if (match) {
-        return {
-          emoji: match[1] ? match[1].trim() : "",
-          dia: match[2],
-          mes: match[3], //parseInt(match[3]),
-          nome: match[4].trim(),
-          telefone: match[5] ? match[5].trim() : null,
-          completo: match[0],
-        };
-      }
-      return null;
+      return {
+        emoji: match[1] ? match[1].trim() : "",
+        dia: match[2],
+        mes: match[3],
+        ano: match[4],
+        nome: match[5].trim(),
+        telefone: match[6] ? match[6].trim() : null,
+        completo: match[0],
+      };
     })
     .filter(
       (obj) =>
         obj &&
         parseInt(obj.mes) === parseInt(mes) &&
-        parseInt(obj.dia) <= parseInt(dia)
+        parseInt(obj.dia) <= parseInt(dia),
     );
 }
 
@@ -89,7 +84,7 @@ async function googleApiContats(TYPE, QUERY = []) {
           let resultado = extrairTodosData(response.CONTACTS_LIST);
           if (resultado.length === 0)
             return {
-              erro: `Nenhum contato encontrado no formato de data: 00/00`,
+              erro: `Nenhum contato encontrado no formato de data com ano (DD/MM/AAAA)`,
             };
           return {
             response: {
@@ -103,7 +98,7 @@ async function googleApiContats(TYPE, QUERY = []) {
           let resultado = extrairMesDia(
             response.CONTACTS_LIST,
             QUERY[1],
-            QUERY[2]
+            QUERY[2],
           );
           if (resultado.length === 0)
             return {

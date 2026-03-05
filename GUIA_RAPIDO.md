@@ -58,7 +58,8 @@ node index.js
 
 ### PASSO 3: Sistema Funciona
 - Diariamente às **08:00** o sistema verifica
-- Clientes com vencimento hoje recebem aviso
+- Clientes com vencimento **hoje ou anteriores** (meses atrás) recebem mensagem apropriada
+  - Mensagem muda dependendo se a data já passou ou é exatamente hoje
 - Pronto! 🎉
 
 ═══════════════════════════════════════════════════════════════════════════════
@@ -71,9 +72,8 @@ Na API Google, os contatos devem ter o formato:
 🔍 21/03/2026 | DN - SP 5193
 ```
 
-**Estrutura:**
 - `🔍` = Emoji (opcional)
-- `21/03/2026` = DATA (DD/MM/AAAA ou DD/MM)
+- `21/03/2026` = DATA (DD/MM/AAAA) **ano obrigatório**
 - `DN` = NOME (extraído automaticamente)
 
 **Exemplos válidos:**
@@ -81,7 +81,6 @@ Na API Google, os contatos devem ter o formato:
 ✅ 🥇 03/04/2026 - WAGNER LOPES - PA 6806
 ✅ 🔍 21/03/2026 | DN - SP 5193
 ✅ 💎 23/01/2026 | MARCOS NOBRE | BA 1968
-✅ 15/11 - RODOLFO - PE 3754
 ✅ 10/12/2026 JOÃO SILVA
 ```
 
@@ -126,6 +125,14 @@ Isso simula a execução e mostra quais clientes venceriam hoje.
 ═══════════════════════════════════════════════════════════════════════════════
 
 ## 🔧 PERSONALIZAÇÕES COMUNS
+
+### Atraso entre envios
+Para reduzir chances de banimento e evitar impressão de comportamento automático, o bot agora espera um tempo aleatório entre **1 e 2 minutos** entre cada mensagem.
+Você pode ajustar esse intervalo em `verificador_vencimentos.js` próximo à linha onde ocorre o envio:
+```javascript
+// Delay longo para não parecer um robô
+await delay(60000 + Math.random() * 60000); // 1–2 minutos aleatório
+```
 
 ### Mudar Horário (ex: 09:00 em vez de 08:00)
 Arquivo: `verificador_vencimentos.js`, linha 245

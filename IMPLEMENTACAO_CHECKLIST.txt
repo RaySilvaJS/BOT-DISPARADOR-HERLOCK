@@ -70,7 +70,7 @@
 ## 🎯 FUNCIONALIDADES IMPLEMENTADAS
 
 ✅ Monitoramento de vencimentos da API Google
-✅ Detecção automática de datas (DD/MM ou DD/MM/AAAA)
+✅ Detecção automática de datas (DD/MM/AAAA com ano obrigatório)
 ✅ Envio de avisos quando chega o dia do vencimento
 ✅ Controle para 1 mensagem por cliente por dia
 ✅ Execução diária automática às 08:00 da manhã
@@ -79,7 +79,7 @@
 ✅ Sistema de rastreamento de envios
 ✅ Logs detalhados para diagnóstico
 ✅ Support para múltiplos formatos de contato
-✅ Suporte para datas com e sem ano
+✅ Suporte para datas com ano somente
 
 ═══════════════════════════════════════════════════════════════════════════════
 

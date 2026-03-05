@@ -13,13 +13,41 @@ const saveJSON = (path, data) =>
 
 const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// ================= EMOJIS PERMITIDOS =================
+const EMOJIS_PERMITIDOS = ["🥉", "🥈", "🥇", "💎", "🔍"];
+
 // ================= FUNÇÕES =================
+/**
+ * Valida se o contato tem emoji permitido e data com ano
+ * Apenas contatos com emoji (🥉🥈🥇💎🔍) + data recebem mensagens
+ */
+function isContatoValido(textoContato) {
+  if (!textoContato) return false;
+
+  // Extrai emoji do início
+  const emojiMatch = textoContato.match(/^(\p{Emoji}|\p{Emoji_Presentation}|\p{Extended_Pictographic})?/u);
+  if (!emojiMatch || !emojiMatch[1]) return false;
+
+  const emoji = emojiMatch[1].trim();
+
+  // Verifica se emoji está na lista permitida
+  if (!EMOJIS_PERMITIDOS.includes(emoji)) {
+    return false;
+  }
+
+  // Verifica se tem data válida com ano (somente DD/MM/AAAA)
+  const dataMatch = textoContato.match(/\d{2}\/\d{2}\/\d{4}/);
+  return !!dataMatch;
+}
+
 /**
  * Extrai data de uma string de contato
  * Exemplos:
  * "🥇 03/04/2026 - WAGNER LOPES - PA 6806" → {dia: 03, mes: 04, ano: 2026}
  * "🔍 21/03/2026 | DN - SP 5193" → {dia: 21, mes: 03, ano: 2026}
- * "🥇15/11 - RODOLFO - PE 3754" → {dia: 15, mes: 11, ano: null}
+  * "🥇 03/04/2026 - WAGNER LOPES - PA 6806" → {dia: 03, mes: 04, ano: 2026}
+  * "🔍 21/03/2026 | DN - SP 5193" → {dia: 21, mes: 03, ano: 2026}
+  * Notas: contatos sem ano retornam null (não são válidos)
  */
 function extrairData(textoContato) {
   if (!textoContato) return null;
@@ -31,16 +59,24 @@ function extrairData(textoContato) {
 
   if (!match) return null;
 
+  // se o grupo de ano não estiver presente, consideramos inválido
+  if (!match[4]) return null;
+
   return {
     dia: parseInt(match[2]),
     mes: parseInt(match[3]),
-    ano: match[4] ? parseInt(match[4]) : null,
+    ano: parseInt(match[4]),
     textoOriginal: textoContato,
   };
 }
 
 /**
- * Verifica se a data do contato é hoje
+ * Verifica se a data do contato é hoje ou já venceu
+ * ✅ COM ANO (2026): Envia apenas no dia específico do ano
+ * ✅ Apenas datas COM ANO são consideradas
+ *    • ano deve ser igual ao ano atual
+ *    • dia e mês precisam coincidir com a data de hoje
+ * Contatos sem ano ou com ano diferente são ignorados pelo monitor
  */
 function isVencimentoHoje(dataContato) {
   if (!dataContato) return false;
@@ -50,17 +86,16 @@ function isVencimentoHoje(dataContato) {
   const mesHoje = hoje.getMonth() + 1;
   const anoHoje = hoje.getFullYear();
 
-  // Se tem ano especificado, verifica também o ano
-  if (dataContato.ano) {
-    return (
-      dataContato.dia === diaHoje &&
-      dataContato.mes === mesHoje &&
-      dataContato.ano === anoHoje
-    );
+  // somente processa se houver ano e ele for o ano atual
+  if (!dataContato.ano || dataContato.ano !== anoHoje) {
+    return false;
   }
 
-  // Se não tem ano, ignora o ano (válido todos os anos)
-  return dataContato.dia === diaHoje && dataContato.mes === mesHoje;
+  // hoje deve bater dia/mes
+  return (
+    dataContato.dia === diaHoje &&
+    dataContato.mes === mesHoje
+  );
 }
 
 /**
@@ -85,15 +120,37 @@ function extrairNome(textoContato) {
 /**
  * Mensagem de aviso de vencimento
  */
-function gerarMensagemVencimento(nomeCliente) {
-  const mensagens = [
-    `🚨 *AVISO DE VENCIMENTO* 🚨\n\n📌 ${nomeCliente}\n\nSeu acesso vence *HOJE*!\n\nResponda *"quero"* para renovar.\n\n🕵🏼 ARTHUR HERLOCK`,
-    `⏰ *ATENÇÃO: VENCIMENTO HOJE* ⏰\n\n👤 ${nomeCliente}\n\nSua assinatura vence em poucas horas.\n\nMande *"quero"* para continuar.\n\n🕵🏼 ARTHUR HERLOCK`,
-    `💎 *ACESSO VENCENDO HOJE* 💎\n\n✋ ${nomeCliente}\n\nRenove seu acesso agora!\n\nDigite *"quero"* para continuar.\n\n🕵🏼 ARTHUR HERLOCK`,
-    `⚠️ *ÚLTIMO DIA DE ACESSO* ⚠️\n\n${nomeCliente}\n\nResponda *"quero"* para não perder o acesso.\n\n🕵🏼 ARTHUR HERLOCK`,
-  ];
+function gerarMensagemVencimento(nomeCliente, dataContato) {
+  const hoje = new Date();
+  const dh = hoje.getDate();
+  const mh = hoje.getMonth() + 1;
+  const ah = hoje.getFullYear();
 
-  return mensagens[Math.floor(Math.random() * mensagens.length)];
+  const formatData = `${String(dataContato.dia).padStart(2, "0")}/${String(
+    dataContato.mes
+  ).padStart(2, "0")}${
+    dataContato.ano ? "/" + dataContato.ano : ""
+  }`;
+
+  // se a data for anterior a hoje, envia mensagem de vencido
+  if (
+    dataContato.ano &&
+    (dataContato.ano < ah ||
+      (dataContato.ano === ah &&
+        (dataContato.mes < mh ||
+          (dataContato.mes === mh && dataContato.dia < dh))))
+  ) {
+    return `⚠️ *CONTRATO VENCIDO* ⚠️\n\n📌 ${nomeCliente}\n\nSeu vencimento foi em *${formatData}*.\nResponda *\"quero\"* para renovar ou atualizar.\n\n🕵🏼 ARTHUR HERLOCK`;
+  }
+
+  // caso contrário (normalmente é hoje)
+  const mensagensHoje = [
+    `🚨 *AVISO DE VENCIMENTO* 🚨\n\n📌 ${nomeCliente}\n\nSeu acesso vence *HOJE*!\n\nResponda *\"quero\"* para renovar.\n\n🕵🏼 ARTHUR HERLOCK`,
+    `⏰ *ATENÇÃO: VENCIMENTO HOJE* ⏰\n\n👤 ${nomeCliente}\n\nSua assinatura vence em poucas horas.\n\nMande *\"quero\"* para continuar.\n\n🕵🏼 ARTHUR HERLOCK`,
+    `💎 *ACESSO VENCENDO HOJE* 💎\n\n✋ ${nomeCliente}\n\nRenove seu acesso agora!\n\nDigite *\"quero\"* para continuar.\n\n🕵🏼 ARTHUR HERLOCK`,
+    `⚠️ *ÚLTIMO DIA DE ACESSO* ⚠️\n\n${nomeCliente}\n\nResponda *\"quero\"* para não perder o acesso.\n\n🕵🏼 ARTHUR HERLOCK`,
+  ];
+  return mensagensHoje[Math.floor(Math.random() * mensagensHoje.length)];
 }
 
 // ================= SISTEMA DE VENCIMENTOS =================
@@ -144,6 +201,12 @@ async function verificarVencimentos(sock) {
     for (const contato of contatos) {
       const { nome, telefone, completo } = contato;
 
+      // ✅ Validação: Deve ter emoji permitido e data com ano
+      if (!isContatoValido(completo)) {
+        console.log(`⚠️ Ignorando contato inválido (emoji/data): ${completo}`);
+        continue; // Pula contatos sem emoji permitido ou sem data com ano
+      }
+
       // Se não tem telefone, pula
       if (!telefone || !nome) continue;
 
@@ -171,10 +234,10 @@ async function verificarVencimentos(sock) {
         continue;
       }
 
-      // ENCONTROU VENCIMENTO DE HOJE! 🎯
+      // Cliente qualificado para notificação (hoje ou já venceu) 🎯
       try {
         const nomeCliente = extrairNome(completo);
-        const mensagem = gerarMensagemVencimento(nomeCliente);
+        const mensagem = gerarMensagemVencimento(nomeCliente, data);
 
         await sock.sendMessage(jid, { text: mensagem });
 
@@ -185,8 +248,9 @@ async function verificarVencimentos(sock) {
         notificadas.clientes[jid] = true;
         saveJSON(notificadasPath, notificadas);
 
-        // Delay para não spammar
-        await delay(3000 + Math.random() * 2000);
+        // Delay longo para evitar banimento e não parecer robô
+        // intervalo aleatório entre 60s e 120s (1–2 minutos)
+        await delay(60000 + Math.random() * 60000);
       } catch (erro) {
         console.log(`❌ Erro ao enviar para ${nome}:`, erro.message);
         await delay(5000);

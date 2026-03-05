@@ -63,10 +63,10 @@
                               │          │
                               │          └─► Lista contatos
                               │              │
-                              │              └─► Extrai datas
+                              │              └─► Extrai datas (ano obrigatório)
                               │                  │
                               │                  ├─► João: 21/03/2026
-                              │                  ├─► Maria: 15/11
+                              │                  ├─► Maria: 15/11/2025   ← ignorado
                               │                  ├─► Pedro: 10/12/2026
                               │                  └─► ...
                               │

@@ -149,8 +149,11 @@ function delayLongo() {
 }
 
 // ================= BOT =================
+let resolveSocket = null; // usado para retornar sock após conexão
 async function startBot() {
   limparPastaAuth();
+  // cria um resolver que será chamado quando a conexão abrir
+
 
   const { state: authState, saveCreds } = await useMultiFileAuthState("./auth");
 const pino = require("pino");
@@ -184,6 +187,11 @@ const { version } = await fetchLatestBaileysVersion();
       if (!monitorVencimentosRodando) {
         monitorVencimentosRodando = true;
         iniciarMonitorVencimentos(sock);
+      }
+      // resolve promise returned by startBot()
+      if (resolveSocket) {
+        resolveSocket(sock);
+        resolveSocket = null;
       }
     }
 
@@ -251,6 +259,11 @@ const { version } = await fetchLatestBaileysVersion();
     } catch (err) {
       console.log("❌ Erro ao processar mensagens:", err);
     }
+  });
+
+  // antes de encerrar startBot, retornar promessa para o socket
+  return new Promise((resolve) => {
+    resolveSocket = resolve;
   });
 }
 
@@ -331,5 +344,11 @@ function mensagemAleatoria() {
   return mensagens[Math.floor(Math.random() * mensagens.length)];
 }
 
-// ================= START =================
-startBot();
+
+// exportar função para uso externo (teste, etc.)
+module.exports = { startBot };
+
+// se o arquivo for executado diretamente, inicie o bot
+if (require.main === module) {
+  startBot();
+}

@@ -28,22 +28,22 @@ const mockSocket = {
 const EXEMPLOS_FORMATOS = {
   // Formato 1: Com emoji, data completa e nome
   exemplo1: "🥇 03/04/2026 - WAGNER LOPES - PA 6806",
-  
-  // Formato 2: Com emoji, data sem ano (repete todo ano)
-  exemplo2: "🥇 15/11 - RODOLFO - PE 3754",
-  
+
+  // Formato 2: com emoji e data completa (ano obrigatório)
+  exemplo2: "🥇 15/11/2026 - RODOLFO - PE 3754",
+
   // Formato 3: Com emoji, data, nome e código (separador |)
   exemplo3: "🔍 21/03/2026 | DN - SP 5193",
-  
+
   // Formato 4: Outro emoji, data completa
   exemplo4: "💎 23/01/2026 | MARCOS NOBRE | BA 1968",
-  
+
   // Formato 5: Emoji diferente
   exemplo5: "⭐ 15/06/2026 - CLIENTE X",
-  
+
   // Formato 6: Sem emoji
   exemplo6: "10/12/2025 - JOÃO SILVA",
-  
+
   // Formato 7: Data com ano diferentes
   exemplo7: "🔥 25/12/2026 | NATAL CLIENTE",
 };
@@ -75,10 +75,10 @@ const CONTATOS_EXEMPLO = [
     emoji: "💎",
     dia: 15,
     mes: 11,
-    ano: null, // Sem ano = toda vez que chega essa data no ano
+    ano: 2026,
     nome: "RODOLFO",
     telefone: "85988776655",
-    completo: "🥇 15/11 - RODOLFO - PE 3754",
+    completo: "🥇 15/11/2026 - RODOLFO - PE 3754",
   },
 ];
 
@@ -95,6 +95,12 @@ Object.entries(EXEMPLOS_FORMATOS).forEach(([chave, formato], i) => {
   console.log(`${i + 1}. ${formato}`);
 });
 
+console.log("\n⚠️ IMPORTANTE:");
+console.log(
+  "   Apenas contatos com EMOJI PERMITIDO e DATA COM ANO serão processados!",
+);
+console.log("   Emojis permitidos: 🥉 🥈 🥇 💎 🔍\n");
+
 console.log("\n" + "=".repeat(80));
 console.log("\n🎯 ESTRUTURA DE DADOS EXTRAÍDA:\n");
 
@@ -102,7 +108,9 @@ CONTATOS_EXEMPLO.forEach((contato, i) => {
   console.log(`Contato ${i + 1}:`);
   console.log(`  Original: ${contato.completo}`);
   console.log(`  Emoji:    ${contato.emoji}`);
-  console.log(`  Data:     ${contato.dia}/${contato.mes}${contato.ano ? "/" + contato.ano : ""}`);
+  console.log(
+    `  Data:     ${contato.dia}/${contato.mes}${contato.ano ? "/" + contato.ano : ""}`,
+  );
   console.log(`  Nome:     ${contato.nome}`);
   console.log(`  Telefone: ${contato.telefone}`);
   console.log("");
@@ -132,28 +140,26 @@ CONTATOS_EXEMPLO.forEach((contato) => {
       status = "🎯 VENCE HOJE";
       mensagem = "✅ Este cliente receberia uma mensagem AGORA de aviso";
     } else if (contato.ano < anoHoje) {
-      status = "❌ JÁ VENCEU";
-      mensagem = "Este cliente já passou da data de vencimento";
+      status = "❌ IGNORADO (ano passado)";
+      mensagem = "Este contato não será notificado pois o ano já passou";
     } else if (
-      contato.mes < mesHoje ||
-      (contato.mes === mesHoje && contato.dia < diaHoje)
+      contato.ano === anoHoje &&
+      (contato.mes < mesHoje ||
+        (contato.mes === mesHoje && contato.dia < diaHoje))
     ) {
-      status = "⏳ VENCE ESTE ANO";
-      mensagem = "Este cliente vence ainda este ano";
+      status = "❌ IGNORADO (data anterior neste ano)";
+      mensagem = "O vencimento já passou neste ano";
+    } else if (contato.ano === anoHoje) {
+      status = "📅 FUTURO (este ano)";
+      mensagem = "Este cliente vence mais tarde este ano";
     } else {
-      status = "📅 FUTURO";
-      mensagem = "Este cliente vence no futuro";
+      status = "📅 FUTURO (anos seguintes)";
+      mensagem = "Este cliente vence em um ano futuro";
     }
-  }
-  // Sem ano especificado (repetido todo ano)
-  else {
-    if (contato.dia === diaHoje && contato.mes === mesHoje) {
-      status = "🎯 VENCE HOJE";
-      mensagem = "✅ Este cliente receberia uma mensagem AGORA de aviso";
-    } else {
-      status = "⏳ PRÓXIMO";
-      mensagem = "Este cliente vence novamente em " + contato.dia + "/" + contato.mes;
-    }
+  } else {
+    // ano ausente - não processado
+    status = "❌ IGNORADO (sem ano)";
+    mensagem = "Contato sem ano não é considerado pelo monitor";
   }
 
   console.log(`${contato.nome}:`);
@@ -198,9 +204,7 @@ console.log("\n📊 MÉTRICAS ESPERADAS:\n");
 const totalContatos = CONTATOS_EXEMPLO.length;
 const vencimentosHoje = CONTATOS_EXEMPLO.filter(
   (c) =>
-    c.dia === diaHoje &&
-    c.mes === mesHoje &&
-    (!c.ano || c.ano === anoHoje)
+    c.dia === diaHoje && c.mes === mesHoje && (!c.ano || c.ano === anoHoje),
 );
 
 console.log(`Total de contatos no exemplo:     ${totalContatos}`);
@@ -217,9 +221,10 @@ console.log("   • 15/11 - RODOLFO");
 console.log("   • 🔍 21/03/2026 | DN\n");
 
 console.log("2. ❌ INCORRETO - Formatos não reconhecidos:");
-console.log("   • Wagner Lopes - 03/04/2026 (data no final)");
-console.log("   • 04-03-2026 (separador - em vez de /)");
-console.log("   • 2026/04/03 (formato invertido)\n");
+console.log("   • Wagner Lopes - 03/04/2026 (sem emoji)");
+console.log("   • ⭐ 04-03-2026 (emoji não permitido)");
+console.log("   • 2026/04/03 (formato invertido)");
+console.log("   • 😀 21/03/2026 (emoji não na lista)\n");
 
 console.log("3. 🔧 Para adicionar contatos com data na API Google:");
 console.log("   1. Abra Google Contacts (contacts.google.com)");

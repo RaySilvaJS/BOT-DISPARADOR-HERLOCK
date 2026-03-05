@@ -2,7 +2,7 @@
 
 ## 📖 Descrição
 
-Sistema automático que monitora os contatos salvos na **API do Google Contacts** e envia avisos de vencimento via WhatsApp quando a data de vencimento do cliente chegar.
+Sistema automático que monitora os contatos salvos na **API do Google Contacts** e envia avisos de vencimento via WhatsApp quando a data de vencimento do cliente chegar (ano deve ser o ano atual).
 
 ## 🎯 Como Funciona
 
@@ -17,7 +17,7 @@ Sistema automático que monitora os contatos salvos na **API do Google Contacts*
 - Envia **apenas 1 mensagem por cliente por dia** (controle de envio)
 
 ### 3️⃣ **Notificação**
-- Envia mensagem de aviso personalizada via WhatsApp
+- Envia mensagem de aviso personalizada via WhatsApp (texto varia se o vencimento já passou ou é hoje)
 - Mensagens variadas e contextualizadas para não parecer spam
 - Inclui nome do cliente na mensagem
 
@@ -34,9 +34,11 @@ O sistema reconhece diversos formatos de datas nos nomes de contatos da API Goog
 ```
 
 ### Padrões de Data Aceitos:
-- ✅ `DD/MM/AAAA` (com ano)
-- ✅ `DD/MM` (sem ano - válido todos os anos)
-- ✅ Opcional: emoji no início
+- ✅ `DD/MM/AAAA` (com ano)  **obrigatório**
+
+> **Observação:** o bot só envia mensagens para contatos com emoji permitido e que contenham alguma data *com ano*.
+
+- ✅ Opcional: emoji no início (🥉🥈🥇💎🔍)
 - ✅ Opcional: nome do cliente depois da data
 - ✅ Separadores: `-` ou `|`
 
