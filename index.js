@@ -267,7 +267,7 @@ Seu plano será verificado para confirmar se está *ativo e em dia*.
 
           await sock.sendMessage(remoteJid, {
             text: `🔗 Link do grupo:
-            
+
 https://chat.whatsapp.com/LfFzKAVYBDB7k8HFxs3BLX`,
           });
         }
@@ -276,7 +276,7 @@ https://chat.whatsapp.com/LfFzKAVYBDB7k8HFxs3BLX`,
         if (text === "quero") {
           if (envios[remoteJid]) {
             await sock.sendMessage(remoteJid, {
-              text: "Link do Grupo 👇🏼\n\nhttps://chat.whatsapp.com/CqPD4qqM3h2DabDrvlRSFh",
+              text: "Link do Grupo 👇🏼\n\nhttps://chat.whatsapp.com/LfFzKAVYBDB7k8HFxs3BLX",
             });
             console.log("✅ Resposta enviada para:", remoteJid);
           } else {
