@@ -245,6 +245,34 @@ const { version } = await fetchLatestBaileysVersion();
           continue;
         }
 
+        const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+        if (["/puxadas", "puxadas", "consulta"].includes(text)) {
+          await sock.sendMessage(remoteJid, {
+            text: `🔎 *GRUPO DE PUXADAS DE DADOS*
+
+Temos um grupo exclusivo para *consultas de dados*.
+
+📌 *Valor:* R$ 15,00 por mês.
+
+Caso tenha interesse, solicite sua entrada abaixo.  
+Seu plano será verificado para confirmar se está *ativo e em dia*.
+
+✅ Estando tudo certo, sua entrada no grupo será liberada.
+
+❗ Caso o plano esteja vencido, digite *PIX* para receber a chave de pagamento e realizar a renovação.`,
+          });
+
+          await sleep(3000); // delay de 3 segundos
+
+          await sock.sendMessage(remoteJid, {
+            text: `🔗 Link do grupo:
+            
+https://chat.whatsapp.com/LfFzKAVYBDB7k8HFxs3BLX`,
+          });
+        }
+
+
         if (text === "quero") {
           if (envios[remoteJid]) {
             await sock.sendMessage(remoteJid, {
