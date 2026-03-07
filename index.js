@@ -154,11 +154,10 @@ async function startBot() {
   limparPastaAuth();
   // cria um resolver que será chamado quando a conexão abrir
 
-
   const { state: authState, saveCreds } = await useMultiFileAuthState("./auth");
-const pino = require("pino");
+  const pino = require("pino");
 
-const { version } = await fetchLatestBaileysVersion();
+  const { version } = await fetchLatestBaileysVersion();
   const sock = makeWASocket({
     auth: authState,
     printQRInTerminal: false,
@@ -187,14 +186,20 @@ const { version } = await fetchLatestBaileysVersion();
       disparadorRodando = false;
       monitorVencimentosRodando = false;
 
-      if (!disparadorRodando) {
-        disparadorRodando = true;
-        disparador(sock);
-      }
-      if (!monitorVencimentosRodando) {
-        monitorVencimentosRodando = true;
-        iniciarMonitorVencimentos(sock);
-      }
+      // Some updates fire before the underlying WebSocket is fully
+      // settled. wait a short moment to ensure readyState === 1 so the
+      // worker loops don’t bail out immediately with "socket not open".
+      setTimeout(() => {
+        if (!disparadorRodando) {
+          disparadorRodando = true;
+          disparador(sock);
+        }
+        if (!monitorVencimentosRodando) {
+          monitorVencimentosRodando = true;
+          iniciarMonitorVencimentos(sock);
+        }
+      }, 1000);
+
       // resolve promise returned by startBot()
       if (resolveSocket) {
         resolveSocket(sock);
@@ -207,7 +212,11 @@ const { version } = await fetchLatestBaileysVersion();
         lastDisconnect?.error?.output?.statusCode !==
         DisconnectReason.loggedOut;
 
-      console.log("❌ Conexão fechada. Reconectar:", shouldReconnect, lastDisconnect?.error);
+      console.log(
+        "❌ Conexão fechada. Reconectar:",
+        shouldReconnect,
+        lastDisconnect?.error,
+      );
       if (shouldReconnect) startBot();
     }
   });
@@ -220,7 +229,9 @@ const { version } = await fetchLatestBaileysVersion();
         if (!msg || !msg.message) continue;
         if (msg.key?.fromMe) continue;
 
-        const remoteJid = msg.key?.remoteJid.includes("@lid") ? msg.key?.remoteJidAlt : msg.key?.remoteJid
+        const remoteJid = msg.key?.remoteJid.includes("@lid")
+          ? msg.key?.remoteJidAlt
+          : msg.key?.remoteJid;
         // console.log("🔍 Processando mensagem de:", JSON.stringify(m, null, 2));
         if (!remoteJid || remoteJid.endsWith("@g.us")) continue;
 
@@ -279,7 +290,6 @@ https://chat.whatsapp.com/LfFzKAVYBDB7k8HFxs3BLX`,
           });
         }
 
-
         if (text === "quero") {
           if (envios[remoteJid]) {
             await sock.sendMessage(remoteJid, {
@@ -307,11 +317,19 @@ async function disparador(sock) {
   let index = state.lastIndex;
 
   while (true) {
-    // if the socket has been closed (or replaced by a reconnect), bail
-    if (!sock || !sock.sendMessage || (sock.ws && sock.ws.readyState !== 1)) {
+    // bail out if the socket has been closed (or replaced by a reconnect).
+    // instead of immediately returning when the ws is still in the
+    // process of opening, wait a bit and retry so the loop can keep
+    // running once the connection actually becomes usable.
+    if (!sock || !sock.sendMessage) {
       console.log("⚠️ Socket do disparador não está aberto, encerrando loop");
       disparadorRodando = false;
       return;
+    }
+    if (sock.ws && sock.ws.readyState !== 1) {
+      // not open yet; give it time
+      await delay(1000);
+      continue;
     }
 
     if (!horarioPermitido()) {
