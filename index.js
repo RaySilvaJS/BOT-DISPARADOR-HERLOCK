@@ -180,6 +180,13 @@ const { version } = await fetchLatestBaileysVersion();
 
     if (connection === "open") {
       console.log("✅ Bot conectado");
+      // whenever a socket opens we want to (re)start the loops. they
+      // may have exited when the previous socket closed, so reset the
+      // flags first. the loops themselves will clear the flags when
+      // they detect a dead socket and return.
+      disparadorRodando = false;
+      monitorVencimentosRodando = false;
+
       if (!disparadorRodando) {
         disparadorRodando = true;
         disparador(sock);
@@ -300,6 +307,13 @@ async function disparador(sock) {
   let index = state.lastIndex;
 
   while (true) {
+    // if the socket has been closed (or replaced by a reconnect), bail
+    if (!sock || !sock.sendMessage || (sock.ws && sock.ws.readyState !== 1)) {
+      console.log("⚠️ Socket do disparador não está aberto, encerrando loop");
+      disparadorRodando = false;
+      return;
+    }
+
     if (!horarioPermitido()) {
       await delay(30 * 60_000);
       continue;

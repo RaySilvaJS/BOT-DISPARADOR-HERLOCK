@@ -239,9 +239,9 @@ async function verificarVencimentos(sock) {
         const nomeCliente = extrairNome(completo);
         const mensagem = gerarMensagemVencimento(nomeCliente, data);
 
-        await sock.sendMessage(jid, { text: mensagem });
+          await sock.sendMessage(jid, { text: mensagem });
 
-        console.log(`✅ Aviso enviado para: ${nome} (${jid})`);
+        console.log(`✅ Aviso enviado para: ${nome || completo} (${jid})`);
         videoEnviadas++;
 
         // Marca como notificado hoje
@@ -252,7 +252,13 @@ async function verificarVencimentos(sock) {
         // intervalo aleatório entre 60s e 120s (1–2 minutos)
         await delay(60000 + Math.random() * 60000);
       } catch (erro) {
-        console.log(`❌ Erro ao enviar para ${nome}:`, erro.message);
+        console.log(`❌ Erro ao enviar para ${nome || completo}:`, erro.message);
+        // if the socket has dropped we abort early so the outer loop
+        // can recreate the connection later
+        if (erro && typeof erro.message === "string" && erro.message.includes("Connection Closed")) {
+          console.log("⚠️ Conexão perdida durante os envios, interrompendo verificação");
+          return; // exit the function
+        }
         await delay(5000);
       }
     }
@@ -276,6 +282,13 @@ async function iniciarMonitorVencimentos(sock) {
   let ultimaVerificacao = null;
 
   while (true) {
+    // bail out if the socket is no longer usable; the connection handler
+    // in index.js will restart the monitor with a new socket
+    if (!sock || !sock.sendMessage || (sock.ws && sock.ws.readyState !== 1)) {
+      console.log("⚠️ Socket do monitor não está aberto, encerrando loop");
+      return;
+    }
+
     const agora = new Date();
     const horaAtual = agora.getHours();
     const dataHoje = agora.toDateString();
